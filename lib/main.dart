@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'api_service.dart';
+import 'home_screen.dart'; // Importa la vista de inicio
+import 'chat_bot_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,100 +19,50 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const ChatScreen(),
+      home: const HomeChatScreen(), // Cambiamos a la vista de navegación
     );
   }
 }
 
-class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+class HomeChatScreen extends StatefulWidget {
+  const HomeChatScreen({Key? key}) : super(key: key);
 
   @override
-  _ChatScreenState createState() => _ChatScreenState();
+  _HomeChatScreenState createState() => _HomeChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
-  final ApiService apiService = ApiService();
-  final TextEditingController _controller = TextEditingController();
-  List<Map<String, String>> messages = [];
+class _HomeChatScreenState extends State<HomeChatScreen> {
+  int _selectedIndex = 0; // Índice del elemento seleccionado en el BottomNavigationBar
 
-  void sendMessage() async {
-    if (_controller.text.isEmpty) return;
+  // Lista de pantallas
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    ChatBotScreen(),
+  ];
 
-    String userMessage = _controller.text;
+  void _onItemTapped(int index) {
     setState(() {
-      messages.add({'role': 'user', 'message': userMessage});
-    });
-
-    _controller.clear();
-
-    String botResponse = await apiService.getResponse(userMessage);
-
-    setState(() {
-      messages.add({'role': 'bot', 'message': botResponse});
+      _selectedIndex = index;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gemini Chatbot'),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final message = messages[index];
-                final isUserMessage = message['role'] == 'user';
-
-                return Align(
-                  alignment: isUserMessage
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
-                  child: Container(
-                    margin:
-                        const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: isUserMessage ? Colors.blue : Colors.black,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      message['message']!,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                );
-              },
-            ),
+      body: _screens[_selectedIndex], // Muestra la pantalla correspondiente
+      bottomNavigationBar: BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: 'Escribe un mensaje...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
-                      ),
-                      
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: sendMessage,
-                ),
-              ],
-            ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat),
+            label: 'Chat',
           ),
         ],
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
       ),
     );
   }
